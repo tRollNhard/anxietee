@@ -66,7 +66,7 @@ Verified working in preview (no console errors; service worker active with all a
 ## To do before public launch
 - [x] Fill in the contact email in Terms + Privacy (done in Phase 1.5).
 - [x] Add `icon-192.png` / `icon-512.png` for PWA install (done in Phase 3).
-- [ ] Decide hosting: own GitHub Pages repo, or a page under thatdudeagainz-tools.
+- [x] Hosting: own GitHub Pages repo — **live at https://trollnhard.github.io/anxietee/** (repo tRollNhard/anxietee, deployed July 8 2026).
 - [ ] Optional custom domain.
 - [ ] Accessibility pass (screen-reader labels, contrast) — largely in place.
 - [ ] Optional: lawyer review of Terms/Privacy before wide/monetized launch.
