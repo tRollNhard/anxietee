@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0d1a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="description" content="ANXIETEE — free, private tools to help you through an anxious moment. No sign-up, nothing leaves your device.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ANXIETEE — calm, right now</title>
+<style>
+  :root{
+    --bg:#0f0d1a;
+    --bg-soft:#171432;
+    --card:rgba(40,33,70,.55);
+    --card-solid:#1c1836;
+    --stroke:rgba(150,120,255,.20);
+    --purple:#b026ff;
+    --violet:#8b5cff;
+    --indigo:#6d5cff;
+    --cyan:#38d6d0;
+    --pink:#ff7ad1;
+    --amber:#ffb35c;
+    --text:#efeafc;
+    --muted:#b4aed4;
+    --danger:#ff6b8b;
+    --grad:linear-gradient(135deg,#8b5cff 0%,#b026ff 45%,#ff7ad1 100%);
+    --grad-calm:linear-gradient(135deg,#6d5cff,#38d6d0);
+    --radius:22px;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans);
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    min-height:100dvh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* ---------- ambient background blobs ---------- */
+  .bg-blobs{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+  .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.32;mix-blend-mode:screen}
+  .blob.b1{width:52vmax;height:52vmax;background:#7b4cff;top:-14vmax;left:-10vmax;animation:drift1 44s ease-in-out infinite}
+  .blob.b2{width:44vmax;height:44vmax;background:#38d6d0;bottom:-16vmax;right:-12vmax;animation:drift2 56s ease-in-out infinite}
+  .blob.b3{width:38vmax;height:38vmax;background:#ff7ad1;top:35%;right:20%;opacity:.22;animation:drift3 64s ease-in-out infinite}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vmax,4vmax) scale(1.08)}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vmax,-5vmax) scale(1.12)}}
+  @keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-4vmax,6vmax) scale(1.06)}}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(120% 90% at 50% 0%,transparent 40%,rgba(8,6,16,.6) 100%);pointer-events:none}
+
+  /* ---------- layout ---------- */
+  .app{max-width:620px;margin:0 auto;padding:20px 20px 40px;min-height:100dvh;display:flex;flex-direction:column}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 2px 18px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.02em;cursor:pointer;background:none;border:none;color:var(--text);font-family:inherit}
+  .brand .dot{width:26px;height:26px;border-radius:50%;background:var(--grad);box-shadow:0 0 18px rgba(176,38,255,.6)}
+  .brand span{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .help-btn{font-family:inherit;font-size:13px;font-weight:700;color:#fff;background:rgba(255,107,139,.16);border:1px solid rgba(255,107,139,.5);border-radius:999px;padding:9px 15px;cursor:pointer;transition:background .15s}
+  .help-btn:hover{background:rgba(255,107,139,.28)}
+  .help-btn:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #9db8cc;outline-offset:2px}
+
+  main{flex:1}
+  .view{display:none;animation:fade .35s ease}
+  .view:focus{outline:none}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:30px;line-height:1.12;letter-spacing:-.02em;font-weight:800;margin-bottom:8px;text-wrap:balance}
+  h2{font-size:22px;font-weight:800;letter-spacing:-.01em;margin-bottom:6px;text-wrap:balance}
+  .sub{color:var(--muted);font-size:16px;margin-bottom:22px;max-width:44ch}
+  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--violet);margin-bottom:10px}
+
+  /* ---------- home ---------- */
+  .sos-btn{
+    width:100%;border:none;cursor:pointer;font-family:inherit;color:#fff;
+    background:var(--grad);border-radius:26px;padding:30px 24px;text-align:left;
+    box-shadow:0 12px 40px rgba(176,38,255,.35),inset 0 1px 0 rgba(255,255,255,.25);
+    position:relative;overflow:hidden;margin-bottom:18px;
+    animation:breathe-glow 6s ease-in-out infinite;
+  }
+  @keyframes breathe-glow{0%,100%{box-shadow:0 12px 40px rgba(176,38,255,.30),inset 0 1px 0 rgba(255,255,255,.25)}50%{box-shadow:0 16px 54px rgba(56,214,208,.45),inset 0 1px 0 rgba(255,255,255,.25)}}
+  .sos-btn .big{font-size:25px;font-weight:800;letter-spacing:-.02em;display:block}
+  .sos-btn .small{font-size:14.5px;opacity:.92;margin-top:4px;display:block}
+  .sos-btn .arrow{position:absolute;right:22px;top:50%;transform:translateY(-50%);font-size:26px;opacity:.9}
+
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+  .tile{border:1px solid var(--stroke);background:var(--card);border-radius:var(--radius);padding:18px 16px;text-align:left;cursor:pointer;font-family:inherit;color:var(--text);backdrop-filter:blur(8px);transition:transform .15s,border-color .15s,background .15s}
+  .tile:hover{transform:translateY(-3px);border-color:rgba(150,120,255,.5);background:rgba(52,44,90,.6)}
+  .tile .ic{font-size:26px;display:block;margin-bottom:8px}
+  .tile .t{font-weight:800;font-size:16px}
+  .tile .d{color:var(--muted);font-size:13px;margin-top:3px}
+
+  /* ---------- breathing orb ---------- */
+  .breathe-stage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:14px 0 8px;min-height:58vh}
+  .orb-wrap{position:relative;width:min(74vw,300px);height:min(74vw,300px);display:flex;align-items:center;justify-content:center}
+  .orb{
+    position:absolute;width:100%;height:100%;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#ff9ad9,#b026ff 45%,#5b6bff 72%,#38d6d0 100%);
+    box-shadow:0 0 60px rgba(176,38,255,.55),0 0 120px rgba(56,214,208,.30);
+    transform:scale(.55);transition:transform 4s ease-in-out;
+  }
+  .orb-ring{position:absolute;width:100%;height:100%;border-radius:50%;border:1px solid rgba(180,150,255,.35)}
+  .orb-label{position:relative;z-index:2;text-align:center;pointer-events:none}
+  .orb-label .phase{font-size:26px;font-weight:800;letter-spacing:-.01em;text-shadow:0 2px 20px rgba(0,0,0,.5)}
+  .orb-label .count{font-size:15px;color:rgba(255,255,255,.85);margin-top:2px;font-variant-numeric:tabular-nums}
+
+  .pattern-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .chip{font-family:inherit;font-size:14px;font-weight:700;color:var(--text);background:rgba(255,255,255,.06);border:1px solid var(--stroke);border-radius:999px;padding:9px 16px;cursor:pointer;transition:.15s}
+  .chip[aria-pressed="true"]{background:var(--grad-calm);border-color:transparent;color:#08121a}
+  .chip:hover{border-color:rgba(150,120,255,.5)}
+
+  /* ---------- generic buttons ---------- */
+  .btn{font-family:inherit;font-weight:800;font-size:16px;cursor:pointer;border:none;border-radius:16px;padding:15px 26px;color:#fff;background:var(--grad);box-shadow:0 8px 26px rgba(139,92,255,.35);transition:transform .12s,box-shadow .15s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--stroke);box-shadow:none}
+  .btn.ghost:hover{border-color:rgba(150,120,255,.5)}
+  .btn.wide{width:100%;display:block;text-align:center}
+  .btn-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+  .back{background:none;border:none;color:var(--muted);font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;padding:6px 2px;margin-bottom:14px;display:inline-flex;align-items:center;gap:6px}
+  .back:hover{color:var(--text)}
+
+  /* ---------- calm-now steps ---------- */
+  .card{border:1px solid var(--stroke);background:var(--card);border-radius:var(--radius);padding:24px 22px;backdrop-filter:blur(8px)}
+  .step-count{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px}
+  .ground-num{font-size:64px;font-weight:800;line-height:1;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+  .ground-prompt{font-size:22px;font-weight:700;margin-bottom:6px}
+  .ground-hint{color:var(--muted);font-size:15px;margin-bottom:22px}
+
+  .progress{display:flex;gap:6px;margin-bottom:20px}
+  .progress i{flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.12)}
+  .progress i.on{background:var(--grad)}
+
+  /* ---------- crisis ---------- */
+  .crisis-card{border:1px solid rgba(255,107,139,.4);background:linear-gradient(180deg,rgba(255,107,139,.10),rgba(40,33,70,.5));border-radius:var(--radius);padding:22px}
+  .crisis-line{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+  .crisis-line:last-child{border-bottom:none}
+  .crisis-line .ic{font-size:24px}
+  .crisis-line .txt{flex:1}
+  .crisis-line .txt b{display:block;font-size:16px}
+  .crisis-line .txt small{color:var(--muted)}
+  .crisis-line a{font-family:inherit;font-weight:800;font-size:15px;color:#fff;background:var(--danger);border-radius:12px;padding:10px 16px;text-decoration:none;white-space:nowrap}
+
+  .disclaimer{color:var(--muted);font-size:13px;line-height:1.5;margin-top:26px;padding-top:18px;border-top:1px solid rgba(255,255,255,.08)}
+  .disclaimer b{color:var(--text)}
+
+  footer.foot{margin-top:30px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6}
+  footer.foot .name{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
+  footer.foot .links{margin-top:10px}
+  footer.foot .linklike{background:none;border:none;font-family:inherit;font-size:inherit;color:var(--violet);text-decoration:none;cursor:pointer;font-weight:700;padding:0}
+  footer.foot .linklike:hover{text-decoration:underline}
+
+  /* ---------- legal pages ---------- */
+  .legal{color:var(--muted);font-size:14.5px;line-height:1.65;max-width:60ch}
+  .legal .updated{font-size:12.5px;color:var(--muted);margin:-2px 0 20px}
+  .legal h3{color:var(--text);font-size:16px;font-weight:800;margin:22px 0 6px}
+  .legal p{margin-bottom:12px}
+  .legal b{color:var(--text)}
+  .legal ul{margin:0 0 12px;padding-left:20px}
+  .legal li{margin-bottom:6px}
+  .legal .tldr{border:1px solid var(--stroke);background:var(--card);border-radius:16px;padding:16px 18px;margin-bottom:20px;color:var(--text);font-size:15px}
+
+  /* ---------- phase 3: learn library ---------- */
+  .learn-group{margin:24px 0 10px;font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}
+  .learn-group:first-child{margin-top:4px}
+  .learn-list{display:flex;flex-direction:column;gap:10px}
+  .learn-item{display:flex;align-items:center;gap:14px;text-align:left;font-family:inherit;color:var(--text);border:1px solid var(--stroke);background:var(--card);border-radius:16px;padding:14px 16px;cursor:pointer;backdrop-filter:blur(8px);transition:transform .15s,border-color .15s}
+  .learn-item:hover{transform:translateY(-2px);border-color:rgba(150,120,255,.5)}
+  .learn-item .ic{font-size:22px}
+  .learn-item .t{font-weight:800;font-size:15.5px;display:block}
+  .learn-item .d{color:var(--muted);font-size:13px}
+  .stat-chips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 14px}
+  .stat-chip{border:1px solid var(--stroke);background:var(--card);border-radius:14px;padding:12px 14px}
+  .stat-chip .n{font-size:21px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .stat-chip .l{color:var(--muted);font-size:12px;line-height:1.4;margin-top:2px}
+  .ev{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle;white-space:nowrap}
+  .ev.first{color:#0a1512;background:rgba(56,214,208,.85)}
+  .ev.strong{color:var(--cyan);border:1px solid rgba(56,214,208,.5)}
+  .ev.mod{color:var(--violet);border:1px solid rgba(139,92,255,.6)}
+  .ev.lim{color:var(--muted);border:1px solid var(--stroke)}
+  .ev.exp{color:var(--amber);border:1px solid rgba(255,179,92,.5)}
+  .art-note{border:1px solid var(--stroke);background:var(--card);border-radius:16px;padding:14px 16px;margin:16px 0;color:var(--text);font-size:14px}
+  .art-cta{margin:18px 0 6px}
+
+  /* ---------- phase 2: forms, check-in, data ---------- */
+  .field{margin-bottom:16px}
+  .field label{display:block;font-weight:700;font-size:15px;margin-bottom:4px;color:var(--text)}
+  .field .hint,.hint{color:var(--muted);font-size:13px}
+  .field .hint{margin-bottom:8px}
+  textarea,input[type=text]{width:100%;font-family:inherit;font-size:15px;color:var(--text);background:rgba(255,255,255,.05);border:1px solid var(--stroke);border-radius:14px;padding:12px 14px;resize:vertical;min-height:76px;line-height:1.5}
+  textarea:focus,input:focus{outline:none;border-color:var(--violet)}
+  textarea::placeholder{color:var(--muted)}
+  .slider-row{display:flex;align-items:center;gap:12px}
+  input[type=range]{flex:1;accent-color:var(--purple);height:6px}
+  .slider-val{font-weight:800;min-width:46px;text-align:right;font-variant-numeric:tabular-nums;color:var(--cyan)}
+  .gad-q{border:1px solid var(--stroke);background:var(--card);border-radius:16px;padding:15px 15px 9px;margin-bottom:12px}
+  .gad-q .qtext{font-weight:700;font-size:15px;margin-bottom:11px}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .opt{font-family:inherit;font-size:13px;font-weight:600;color:var(--text);background:rgba(255,255,255,.05);border:1px solid var(--stroke);border-radius:12px;padding:10px 8px;cursor:pointer;text-align:center;transition:.12s}
+  .opt[aria-pressed=true]{background:var(--grad-calm);border-color:transparent;color:#08121a}
+  .opt:hover{border-color:rgba(150,120,255,.5)}
+  .result-score{text-align:center;padding:26px 20px}
+  .result-score .num{font-size:56px;font-weight:800;line-height:1;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .result-score .band{font-size:20px;font-weight:800;margin-top:6px}
+  .chart{width:100%;height:auto;display:block;margin:6px 0 4px}
+  .entry{border:1px solid var(--stroke);background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+  .entry .when{font-size:12px;color:var(--muted);margin-bottom:5px}
+  .entry .th{color:var(--muted);font-size:14px}
+  .entry .rf{color:var(--text);font-size:14.5px;margin-top:4px}
+  .empty{color:var(--muted);font-size:14px;text-align:center;padding:22px;border:1px dashed var(--stroke);border-radius:14px}
+  .mini-del{background:none;border:none;color:var(--muted);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-top:8px;padding:0}
+  .mini-del:hover{color:var(--danger)}
+  .danger-btn{color:var(--danger)!important;border-color:rgba(255,107,139,.5)!important}
+
+  /* ---------- modal ---------- */
+  .modal-bg{position:fixed;inset:0;background:rgba(6,4,14,.72);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal-bg.show{display:flex;animation:fade .3s ease}
+  .modal{max-width:460px;width:100%;background:var(--card-solid);border:1px solid var(--stroke);border-radius:24px;padding:28px 24px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+  .modal h2{margin-bottom:10px}
+  .modal p{color:var(--muted);font-size:15px;margin-bottom:14px}
+  .modal .pts{list-style:none;margin:0 0 20px;padding:0}
+  .modal .pts li{display:flex;gap:10px;font-size:14.5px;margin-bottom:10px;color:var(--text)}
+  .modal .pts li .k{color:var(--cyan);font-weight:800}
+
+  @media (max-width:420px){
+    h1{font-size:26px}
+    .tiles{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .blob,.sos-btn{animation:none!important}
+    .view{animation:none}
+    .orb{transition:transform .4s linear}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-blobs" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+</div>
+
+<div class="app">
+  <header class="top">
+    <button class="brand" onclick="go('home')" aria-label="ANXIETEE home">
+      <span class="dot"></span><span>ANXIETEE</span>
+    </button>
+    <button class="help-btn" onclick="go('crisis')">🚨 Get help now</button>
+  </header>
+
+  <main>
+    <!-- ============ HOME ============ -->
+    <section class="view active" id="view-home">
+      <p class="eyebrow">You're going to be okay</p>
+      <h1>Feeling anxious?<br>Let's get through it together.</h1>
+      <p class="sub">Free, private tools for right now. No sign-up, and nothing you do here ever leaves your device.</p>
+
+      <button class="sos-btn" onclick="startCalmNow()">
+        <span class="big">I'm anxious right now</span>
+        <span class="small">A calm, guided walk-through — grounding + breathing</span>
+        <span class="arrow">→</span>
+      </button>
+
+      <div class="tiles">
+        <button class="tile" onclick="go('breathe')">
+          <span class="ic">🌬️</span>
+          <div class="t">Breathe</div>
+          <div class="d">Guided paced breathing</div>
+        </button>
+        <button class="tile" onclick="startGrounding()">
+          <span class="ic">🌱</span>
+          <div class="t">Grounding</div>
+          <div class="d">The 5-4-3-2-1 method</div>
+        </button>
+        <button class="tile" onclick="openReframe()">
+          <span class="ic">💭</span>
+          <div class="t">Reframe</div>
+          <div class="d">CBT thought tool</div>
+        </button>
+        <button class="tile" onclick="openCheckin()">
+          <span class="ic">📊</span>
+          <div class="t">Check-in</div>
+          <div class="d">GAD-7 + your trend</div>
+        </button>
+        <button class="tile" onclick="go('crisis')">
+          <span class="ic">💛</span>
+          <div class="t">Get help</div>
+          <div class="d">Talk to someone now</div>
+        </button>
+        <button class="tile" onclick="openLearn()">
+          <span class="ic">📚</span>
+          <div class="t">Learn</div>
+          <div class="d">About anxiety &amp; what helps</div>
+        </button>
+      </div>
+
+      <p class="disclaimer">
+        <b>ANXIETEE is a wellness tool, not medical care.</b> It's here to support you — it isn't therapy, a diagnosis, or a substitute for a professional. If you're in crisis or thinking about harming yourself, please tap <b>Get help now</b> above.
+      </p>
+    </section>
+
+    <!-- ============ CALM-NOW ============ -->
+    <section class="view" id="view-calm">
+      <button class="back" onclick="go('home')">← Home</button>
+      <div id="calm-inner"></div>
+    </section>
+
+    <!-- ============ BREATHE ============ -->
+    <section class="view" id="view-breathe">
+      <button class="back" onclick="stopBreathing();go('home')">← Home</button>
+      <p class="eyebrow" style="text-align:center">Breathe</p>
+      <div class="breathe-stage">
+        <div class="orb-wrap">
+          <div class="orb-ring"></div>
+          <div class="orb" id="orb"></div>
+          <div class="orb-label"><div class="phase" id="phase">Ready?</div><div class="count" id="count"></div></div>
+        </div>
+        <div class="pattern-row" id="patterns"></div>
+        <div class="btn-row">
+          <button class="btn" id="breatheToggle" onclick="toggleBreathing()">Start</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CRISIS ============ -->
+    <section class="view" id="view-crisis">
+      <button class="back" onclick="go('home')">← Home</button>
+      <h2>You don't have to face this alone 💛</h2>
+      <p class="sub">If you're in crisis or thinking about hurting yourself, reach a real person now — free, confidential, 24/7.</p>
+      <div class="crisis-card">
+        <div class="crisis-line">
+          <span class="ic">📞</span>
+          <div class="txt"><b>988 Suicide &amp; Crisis Lifeline</b><small>Call or text · 24/7 · USA</small></div>
+          <a href="tel:988">Call 988</a>
+        </div>
+        <div class="crisis-line">
+          <span class="ic">💬</span>
+          <div class="txt"><b>Crisis Text Line</b><small>Text HOME to 741741 · USA &amp; Canada</small></div>
+          <a href="sms:741741&body=HOME">Text</a>
+        </div>
+        <div class="crisis-line">
+          <span class="ic">🚑</span>
+          <div class="txt"><b>Immediate danger?</b><small>If life is at risk, call emergency services</small></div>
+          <a href="tel:911">Call 911</a>
+        </div>
+      </div>
+      <p class="disclaimer">Outside the US? Find a helpline near you at <b>findahelpline.com</b>. ANXIETEE isn't a crisis service — these lines are staffed by trained people who want to help.</p>
+    </section>
+
+    <!-- ============ REFRAME (CBT) ============ -->
+    <section class="view" id="view-reframe">
+      <button class="back" onclick="go('home')">← Home</button>
+      <h2>Reframe a thought</h2>
+      <p class="sub">Anxiety twists thoughts out of shape. This CBT tool helps you step back and find a fairer view. Everything stays private on your device.</p>
+      <div class="card">
+        <div class="field">
+          <label>1 · What's the situation?</label>
+          <div class="hint">What happened, or what set off the anxious feeling?</div>
+          <textarea id="rf-sit" placeholder="e.g. I have to speak up in a meeting tomorrow"></textarea>
+        </div>
+        <div class="field">
+          <label>2 · What's the anxious thought?</label>
+          <div class="hint">The worry running through your mind — say it plainly.</div>
+          <textarea id="rf-thought" placeholder="e.g. I'll freeze and everyone will think I'm useless"></textarea>
+          <div class="slider-row" style="margin-top:10px">
+            <span class="hint" style="white-space:nowrap">Believe it:</span>
+            <input type="range" id="rf-b1" min="0" max="100" value="70" oninput="document.getElementById('rf-b1v').textContent=this.value+'%'">
+            <span class="slider-val" id="rf-b1v">70%</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>3 · What makes it feel true?</label>
+          <div class="hint">The evidence for the worry.</div>
+          <textarea id="rf-for" placeholder="e.g. I got nervous last time"></textarea>
+        </div>
+        <div class="field">
+          <label>4 · What doesn't fit?</label>
+          <div class="hint">Evidence against it. What would you tell a friend who thought this?</div>
+          <textarea id="rf-against" placeholder="e.g. I've spoken up before and it went fine; people are usually kind"></textarea>
+        </div>
+        <div class="field">
+          <label>5 · A more balanced thought</label>
+          <div class="hint">Not fake-positive — just fairer and truer.</div>
+          <textarea id="rf-reframe" placeholder="e.g. I'm prepared, and even if I stumble, it's not the end of the world"></textarea>
+          <div class="slider-row" style="margin-top:10px">
+            <span class="hint" style="white-space:nowrap">Now believe the worry:</span>
+            <input type="range" id="rf-b2" min="0" max="100" value="40" oninput="document.getElementById('rf-b2v').textContent=this.value+'%'">
+            <span class="slider-val" id="rf-b2v">40%</span>
+          </div>
+        </div>
+        <button class="btn wide" onclick="saveReframe()">Save entry</button>
+        <div id="rf-msg"></div>
+      </div>
+      <h3 style="margin:24px 0 10px;font-size:16px">Your past entries</h3>
+      <div id="rf-list"></div>
+    </section>
+
+    <!-- ============ CHECK-IN (GAD-7) ============ -->
+    <section class="view" id="view-checkin">
+      <button class="back" onclick="go('home')">← Home</button>
+      <div id="checkin-inner"></div>
+    </section>
+
+    <!-- ============ YOUR DATA ============ -->
+    <section class="view" id="view-data">
+      <button class="back" onclick="go('home')">← Home</button>
+      <h2>Your data</h2>
+      <p class="sub">Everything you enter in ANXIETEE — your check-ins and reframes — is stored only in this browser, on this device. It never leaves, and no one else can see it. You're in full control.</p>
+      <div id="data-summary" class="card"></div>
+      <div class="btn-row" style="justify-content:flex-start;margin-top:16px">
+        <button class="btn ghost" onclick="exportData()">Export my data</button>
+        <button class="btn ghost danger-btn" onclick="clearData()">Clear all my data</button>
+      </div>
+    </section>
+
+    <!-- ============ LEARN ============ -->
+    <section class="view" id="view-learn">
+      <button class="back" onclick="go('home')">← Home</button>
+      <h2>Learn 📚</h2>
+      <p class="sub">Plain-language guides to anxiety — what it is, the many shapes it takes, and what genuinely helps. Compiled from published medical sources (NIMH, WHO, Cleveland Clinic, Mayo Clinic, and more).</p>
+      <div id="learn-groups"></div>
+      <p class="disclaimer">Everything here is <b>general education</b> drawn from the cited sources — not medical advice, a diagnosis, or a treatment plan. For decisions about your own care, talk with a qualified clinician.</p>
+    </section>
+
+    <!-- ============ ARTICLE ============ -->
+    <section class="view" id="view-article">
+      <button class="back" onclick="go('learn')">← All topics</button>
+      <div id="article-inner"></div>
+    </section>
+
+    <!-- ============ TERMS ============ -->
+    <section class="view" id="view-terms">
+      <button class="back" onclick="go('home')">← Home</button>
+      <h2>Terms of Use</h2>
+      <div class="legal">
+        <p class="updated">Last updated: July 8, 2026</p>
+
+        <div class="tldr"><b>In plain English:</b> ANXIETEE is a free self-help tool, not medical care. It won't replace a doctor or therapist, and it isn't for emergencies. Use it to feel a little steadier — but for real medical or mental-health needs, or any crisis, reach a professional or call/text 988.</div>
+
+        <p>By using ANXIETEE (“the app”), you agree to these terms. If you don't agree, please don't use the app.</p>
+
+        <h3>1. What ANXIETEE is</h3>
+        <p>ANXIETEE is a free, self-help <b>wellness tool</b>. It offers general coping techniques (such as guided breathing and grounding exercises) and general educational information to help you manage everyday stress and anxiety.</p>
+
+        <h3>2. What ANXIETEE is NOT</h3>
+        <p>ANXIETEE is <b>not</b> therapy, counseling, medical or mental-health treatment, a diagnosis, or professional advice of any kind. Using it does <b>not</b> create a doctor–patient, therapist–client, or other professional relationship. It is not a medical device. Always seek the advice of a qualified health professional for any medical or mental-health question, and never disregard or delay professional advice because of something in this app.</p>
+
+        <h3>3. Not for emergencies</h3>
+        <p>ANXIETEE is <b>not a crisis or emergency service.</b> If you are in crisis, thinking about harming yourself or others, or facing a medical emergency, stop and get real help now: in the US call or text <b>988</b> (Suicide &amp; Crisis Lifeline) or call <b>911</b>; elsewhere, contact your local emergency number or a helpline at findahelpline.com.</p>
+
+        <h3>4. General information only</h3>
+        <p>Any information in the app is general in nature, may not apply to your situation, and is not personalized advice. Techniques that help many people may not help — or may not be right for — everyone.</p>
+
+        <h3>5. Use at your own risk; no warranty</h3>
+        <p>The app is provided <b>“as is” and “as available,” without warranties of any kind,</b> express or implied. We do not warrant that it is accurate, complete, uninterrupted, error-free, or that it will improve your wellbeing or produce any particular result. You use it at your own risk.</p>
+
+        <h3>6. Limitation of liability</h3>
+        <p>To the fullest extent permitted by law, ANXIETEE and its creator will not be liable for any indirect, incidental, or consequential damages, or for any harm arising out of or related to your use of (or inability to use) the app. You are responsible for how you choose to use it.</p>
+
+        <h3>7. Age</h3>
+        <p>ANXIETEE is not directed to children under 13. If you are under 18, please use it with the awareness and support of a parent, guardian, or another trusted adult.</p>
+
+        <h3>8. Changes</h3>
+        <p>We may update these terms from time to time. Changes take effect when posted, and the “last updated” date above will change. Continuing to use the app means you accept the current terms.</p>
+
+        <h3>9. Contact</h3>
+        <p>Questions about these terms? Contact: <b>jwclarkladymae@gmail.com</b>.</p>
+      </div>
+    </section>
+
+    <!-- ============ PRIVACY ============ -->
+    <section class="view" id="view-privacy">
+      <button class="back" onclick="go('home')">← Home</button>
+      <h2>Privacy Policy</h2>
+      <div class="legal">
+        <p class="updated">Last updated: July 8, 2026</p>
+
+        <div class="tldr"><b>The short version:</b> ANXIETEE collects nothing about you. No account, no tracking, no analytics, no ads. Anything the app remembers stays on your own device and is never sent to us or anyone else. Your privacy genuinely stays yours.</div>
+
+        <h3>1. What we collect</h3>
+        <p><b>Nothing.</b> ANXIETEE has no accounts, no sign-up, and no login. We do not collect, store, or transmit your name, email, location, health information, or any personal data to any server. We have no server that receives your information.</p>
+
+        <h3>2. What's stored on your device</h3>
+        <p>To work, the app may save small bits of information <b>locally in your own browser</b> (using your browser's “local storage”) — for example, a flag remembering that you've already seen the welcome message, and, in future features, things you enter such as check-ins or notes. This data <b>stays on your device</b>, is not transmitted to us, and you can erase it anytime by clearing your browser's data for this site.</p>
+
+        <h3>3. No tracking, ads, or third parties</h3>
+        <p>ANXIETEE uses <b>no</b> advertising, no analytics, no cookies for tracking, and no third-party trackers, marketing pixels, or social-media SDKs. We do not sell, rent, or share your data — because we don't collect any.</p>
+
+        <h3>4. Crisis &amp; phone links</h3>
+        <p>If you tap a crisis link (like 988, a text line, or 911), your own device's phone or messaging app handles the call or text. Those services have their own privacy practices; ANXIETEE does not see, receive, or record anything about it.</p>
+
+        <h3>5. Hosting</h3>
+        <p>The app is delivered as static files from a web host. As with any website, the host may keep standard technical server logs (such as IP addresses) for security and operation. ANXIETEE itself adds no tracking on top of that.</p>
+
+        <h3>6. Children</h3>
+        <p>We do not knowingly collect personal information from anyone, including children — because the app collects no personal information at all.</p>
+
+        <h3>7. Changes</h3>
+        <p>If this policy changes, we'll update the “last updated” date above.</p>
+
+        <h3>8. Contact</h3>
+        <p>Privacy questions? Contact: <b>jwclarkladymae@gmail.com</b>.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    Made with care by <span class="name">ANXIETEE</span> · your privacy stays yours — everything runs on your device.<br>
+    Not a substitute for professional care · In crisis, call or text <b>988</b>.
+    <div class="links"><button class="linklike" onclick="openData()">Your data</button> · <button class="linklike" onclick="go('terms')">Terms of Use</button> · <button class="linklike" onclick="go('privacy')">Privacy Policy</button></div>
+  </footer>
+</div>
+
+<!-- ============ FIRST-RUN MODAL ============ -->
+<div class="modal-bg" id="welcome">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+    <h2 id="welcome-title">Welcome to ANXIETEE 💜</h2>
+    <p>A calm little space to help you get through anxious moments. Before you start, three quick things:</p>
+    <ul class="pts">
+      <li><span class="k">✓</span><div><b>It's private.</b> No account, no tracking — nothing leaves your phone or computer.</div></li>
+      <li><span class="k">✓</span><div><b>It's support, not treatment.</b> ANXIETEE isn't therapy or a doctor. It's tools to help you cope.</div></li>
+      <li><span class="k">✓</span><div><b>In crisis?</b> Tap “Get help now” anytime to reach a real person (988).</div></li>
+    </ul>
+    <button class="btn wide" onclick="dismissWelcome()">I understand — let's begin</button>
+  </div>
+</div>
+
+<script>
+/* ---------------- clickjacking guard (static hosts can't send frame-ancestors headers) ---------------- */
+if(window.top!==window.self){ try{ window.top.location=window.self.location; }catch(e){ document.body.style.display='none'; } }
+
+const REDUCED_MOTION=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------------- view router ---------------- */
+function go(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const el=document.getElementById('view-'+name);
+  if(el){ el.classList.add('active'); el.setAttribute('tabindex','-1'); el.focus({preventScroll:true}); }
+  window.scrollTo({top:0,behavior:REDUCED_MOTION?'auto':'smooth'});
+  if(name!=='breathe') stopBreathing();
+  /* clear the calm flow's injected markup when leaving it — its #orb/#phase/#count/#breatheToggle
+     copies sit earlier in the DOM and would hijack getElementById in the breathing engine */
+  if(name!=='calm'){ const ci=document.getElementById('calm-inner'); if(ci) ci.innerHTML=''; }
+}
+
+/* ---------------- first-run welcome ---------------- */
+function showWelcome(){
+  const w=document.getElementById('welcome');
+  w.classList.add('show');
+  const b=w.querySelector('.btn'); if(b) b.focus();
+}
+try{ if(!localStorage.getItem('anxietee_seen')) showWelcome(); }
+catch(e){ showWelcome(); }
+function dismissWelcome(){
+  document.getElementById('welcome').classList.remove('show');
+  try{ localStorage.setItem('anxietee_seen','1'); }catch(e){}
+  const home=document.getElementById('view-home');
+  home.setAttribute('tabindex','-1'); home.focus({preventScroll:true});
+}
+
+/* ---------------- breathing engine ---------------- */
+const PATTERNS={
+  calm:{name:'Calm · 6 / min',phases:[['Breathe in',5,'in'],['Breathe out',5,'out']]},
+  box:{name:'Box · 4-4-4-4',phases:[['Breathe in',4,'in'],['Hold',4,'hold'],['Breathe out',4,'out'],['Hold',4,'hold']]},
+  '478':{name:'4-7-8 · sleep',phases:[['Breathe in',4,'in'],['Hold',7,'hold'],['Breathe out',8,'out']]}
+};
+let curPattern='calm', bRunning=false, bTimer=null, bTick=null, bStartTimer=null;
+
+function buildPatternChips(){
+  const wrap=document.getElementById('patterns'); wrap.innerHTML='';
+  Object.keys(PATTERNS).forEach(k=>{
+    const b=document.createElement('button');
+    b.className='chip'; b.textContent=PATTERNS[k].name;
+    b.setAttribute('aria-pressed', k===curPattern);
+    b.onclick=()=>{ curPattern=k; buildPatternChips(); if(bRunning){stopBreathing();startBreathing();} };
+    wrap.appendChild(b);
+  });
+}
+buildPatternChips();
+
+function setOrb(state,dur){
+  const orb=document.getElementById('orb');
+  /* under reduced motion, leave the stylesheet's quick .4s transition instead of a long animated scale */
+  const d=REDUCED_MOTION?'':dur+'s';
+  if(state==='in'){ orb.style.transitionDuration=d; orb.style.transform='scale(1)'; }
+  else if(state==='out'){ orb.style.transitionDuration=d; orb.style.transform='scale(.55)'; }
+  /* hold: leave transform as-is */
+}
+function runPhase(i){
+  if(!bRunning) return;
+  const ph=PATTERNS[curPattern].phases;
+  const [label,dur,state]=ph[i%ph.length];
+  document.getElementById('phase').textContent=label;
+  setOrb(state,dur);
+  let remain=dur;
+  document.getElementById('count').textContent=remain;
+  clearInterval(bTick);
+  bTick=setInterval(()=>{ remain--; document.getElementById('count').textContent=remain>0?remain:''; if(remain<=0)clearInterval(bTick); },1000);
+  bTimer=setTimeout(()=>runPhase(i+1),dur*1000);
+}
+function startBreathing(){
+  const t=document.getElementById('breatheToggle'), orb=document.getElementById('orb');
+  if(!t||!orb) return;
+  bRunning=true;
+  t.textContent='Stop';
+  orb.style.transitionDuration='.4s'; orb.style.transform='scale(.55)';
+  setTimeout(()=>runPhase(0),120);
+}
+function stopBreathing(){
+  bRunning=false; clearTimeout(bTimer); clearInterval(bTick); clearTimeout(bStartTimer);
+  const t=document.getElementById('breatheToggle'); if(t)t.textContent='Start';
+  const p=document.getElementById('phase'); if(p)p.textContent='Ready?';
+  const c=document.getElementById('count'); if(c)c.textContent='';
+  const orb=document.getElementById('orb'); if(orb){orb.style.transitionDuration='.6s';orb.style.transform='scale(.55)';}
+}
+function toggleBreathing(){ bRunning?stopBreathing():startBreathing(); }
+
+/* ---------------- grounding (5-4-3-2-1) ---------------- */
+const GROUND=[
+  {n:5,sense:'see',prompt:'Name 5 things you can SEE',hint:'Look slowly around you. Say them out loud or in your head.'},
+  {n:4,sense:'hear',prompt:'Notice 4 things you can HEAR',hint:'Near and far — a hum, a voice, your own breath.'},
+  {n:3,sense:'touch',prompt:'Feel 3 things you can TOUCH',hint:'Your feet on the floor, fabric, the temperature of the air.'},
+  {n:2,sense:'smell',prompt:'Notice 2 things you can SMELL',hint:"If you can't smell anything, name 2 smells you like."},
+  {n:1,sense:'taste',prompt:'Name 1 thing you can TASTE',hint:'Or one flavor you find comforting.'}
+];
+
+/* ---------------- Calm-Now guided flow ---------------- */
+let groundIdx=0;
+function renderCalm(html){ document.getElementById('calm-inner').innerHTML=html; }
+
+function startCalmNow(){ go('calm'); calmIntro(); }
+function calmIntro(){
+  renderCalm(`
+    <p class="eyebrow" style="color:var(--cyan)">First — you're safe</p>
+    <h2>Let's slow this down together.</h2>
+    <p class="sub">Anxiety feels awful, but it isn't dangerous and it will pass. We'll take it one small step at a time. Ready?</p>
+    <div class="card" style="margin-bottom:20px">
+      <p style="color:var(--muted);font-size:15px">We'll do two things:</p>
+      <div style="display:flex;gap:14px;margin-top:12px">
+        <div style="flex:1"><div style="font-size:24px">🌱</div><b>Ground</b><div style="color:var(--muted);font-size:13px">Reconnect with your senses</div></div>
+        <div style="flex:1"><div style="font-size:24px">🌬️</div><b>Breathe</b><div style="color:var(--muted);font-size:13px">Slow your body down</div></div>
+      </div>
+    </div>
+    <button class="btn wide" onclick="startGroundingFlow()">Let's begin →</button>
+    <div class="btn-row"><button class="btn ghost" onclick="calmToBreath()">Skip to breathing</button></div>
+  `);
+}
+function startGrounding(){ go('calm'); startGroundingFlow(); } /* entry from tile */
+function startGroundingFlow(){ groundIdx=0; renderGround(); }
+function renderGround(){
+  const g=GROUND[groundIdx];
+  const bars=GROUND.map((_,i)=>`<i class="${i<=groundIdx?'on':''}"></i>`).join('');
+  renderCalm(`
+    <div class="progress" aria-hidden="true">${bars}</div>
+    <div class="step-count">Grounding · ${groundIdx+1} of 5</div>
+    <div class="card">
+      <div class="ground-num">${g.n}</div>
+      <div class="ground-prompt">${g.prompt}</div>
+      <div class="ground-hint">${g.hint}</div>
+      <button class="btn wide" onclick="nextGround()">${groundIdx<4?'Next':'Done — now breathe →'}</button>
+    </div>
+    <div class="btn-row"><button class="btn ghost" onclick="go('home')">I feel better</button></div>
+  `);
+}
+function nextGround(){ if(groundIdx<GROUND.length-1){ groundIdx++; renderGround(); } else { calmToBreath(); } }
+
+function calmToBreath(){
+  renderCalm(`
+    <p class="eyebrow" style="color:var(--cyan);text-align:center">Now let's breathe</p>
+    <div class="breathe-stage" style="min-height:auto">
+      <div class="orb-wrap">
+        <div class="orb-ring"></div>
+        <div class="orb" id="orb"></div>
+        <div class="orb-label"><div class="phase" id="phase">Ready?</div><div class="count" id="count"></div></div>
+      </div>
+      <p class="sub" style="text-align:center;margin:0">Follow the orb. In as it grows, out as it shrinks. Stay as long as you like.</p>
+      <div class="btn-row">
+        <button class="btn" id="breatheToggle" onclick="toggleBreathing()">Start</button>
+        <button class="btn ghost" onclick="calmClose()">I'm calmer now</button>
+      </div>
+    </div>
+  `);
+  curPattern='calm';
+  stopBreathing();
+  bStartTimer=setTimeout(startBreathing,300);
+}
+function calmClose(){
+  stopBreathing();
+  renderCalm(`
+    <div class="card" style="text-align:center;padding:34px 24px">
+      <div style="font-size:40px;margin-bottom:8px">💜</div>
+      <h2>You made it through.</h2>
+      <p class="sub" style="margin:10px auto 0">That took real strength. The wave rose, and it passed — like they always do. Be gentle with yourself for the rest of today.</p>
+    </div>
+    <div class="btn-row" style="margin-top:18px">
+      <button class="btn" onclick="startCalmNow()">Go again</button>
+      <button class="btn ghost" onclick="go('home')">Back home</button>
+    </div>
+  `);
+}
+
+/* ================= PHASE 2 ================= */
+/* ---- local storage helpers (device-only) ---- */
+function load(key){ try{ const v=JSON.parse(localStorage.getItem(key)||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+function save(key,val){ try{ localStorage.setItem(key,JSON.stringify(val)); }catch(e){} }
+function esc(s){ return (''+(s||'')).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(iso){ try{ const d=new Date(iso); return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+' · '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); }catch(e){ return iso; } }
+
+function openReframe(){ go('reframe'); renderReframeList(); }
+function openCheckin(){ go('checkin'); renderCheckin(); }
+function openData(){ go('data'); renderDataSummary(); }
+
+/* ---- CBT thought reframe ---- */
+function saveReframe(){
+  const sit=document.getElementById('rf-sit').value.trim();
+  const thought=document.getElementById('rf-thought').value.trim();
+  const reframe=document.getElementById('rf-reframe').value.trim();
+  const msg=document.getElementById('rf-msg');
+  if(!sit||!thought||!reframe){ msg.innerHTML='<p class="hint" style="color:var(--amber);margin-top:12px">Fill in at least the situation, the anxious thought, and a balanced thought.</p>'; return; }
+  const arr=load('anxietee_thoughts');
+  arr.push({date:new Date().toISOString(),sit:sit,thought:thought,forE:document.getElementById('rf-for').value.trim(),against:document.getElementById('rf-against').value.trim(),reframe:reframe,b1:+document.getElementById('rf-b1').value,b2:+document.getElementById('rf-b2').value});
+  save('anxietee_thoughts',arr);
+  ['rf-sit','rf-thought','rf-for','rf-against','rf-reframe'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rf-b1').value=70; document.getElementById('rf-b1v').textContent='70%';
+  document.getElementById('rf-b2').value=40; document.getElementById('rf-b2v').textContent='40%';
+  msg.innerHTML='<p class="hint" style="color:var(--cyan);margin-top:12px">💜 Saved. Nicely done — that’s the real work of it.</p>';
+  renderReframeList();
+}
+function renderReframeList(){
+  const all=load('anxietee_thoughts');
+  const el=document.getElementById('rf-list'); if(!el) return;
+  if(!all.length){ el.innerHTML='<div class="empty">No entries yet. Your saved reframes will appear here — only on your device.</div>'; return; }
+  el.innerHTML=all.map((e,i)=>i).reverse().map(i=>{
+    const e=all[i];
+    const shift=(e.b1!=null&&e.b2!=null&&isFinite(e.b1)&&isFinite(e.b2))?`<div class="hint" style="margin-top:6px">Belief in the worry: ${+e.b1}% → <b style="color:var(--cyan)">${+e.b2}%</b></div>`:'';
+    return `<div class="entry"><div class="when">${esc(fmtDate(e.date))}</div><div class="th">💭 ${esc(e.thought)}</div><div class="rf">💜 ${esc(e.reframe)}</div>${shift}<button class="mini-del" onclick="deleteReframe(${+i})">Delete</button></div>`;
+  }).join('');
+}
+function deleteReframe(idx){ const arr=load('anxietee_thoughts'); arr.splice(idx,1); save('anxietee_thoughts',arr); renderReframeList(); }
+
+/* ---- GAD-7 check-in ---- */
+const GADQ=['Feeling nervous, anxious, or on edge','Not being able to stop or control worrying','Worrying too much about different things','Trouble relaxing',"Being so restless that it's hard to sit still",'Becoming easily annoyed or irritable','Feeling afraid, as if something awful might happen'];
+const GADOPTS=['Not at all','Several days','More than half the days','Nearly every day'];
+let gadAnswers=[];
+function renderCheckin(){
+  gadAnswers=[null,null,null,null,null,null,null];
+  const qs=GADQ.map((q,i)=>`<div class="gad-q"><div class="qtext">${i+1}. ${q}</div><div class="opts">${GADOPTS.map((o,v)=>`<button class="opt" aria-pressed="false" onclick="selectGad(${i},${v},this)">${o}</button>`).join('')}</div></div>`).join('');
+  document.getElementById('checkin-inner').innerHTML=`
+    <p class="eyebrow" style="color:var(--cyan)">Check-in · GAD-7</p>
+    <h2>How have you been feeling?</h2>
+    <p class="sub">Over the <b>last 2 weeks</b>, how often have you been bothered by the following? This is the GAD-7 — a standard check professionals use — here just for your own awareness, not a diagnosis.</p>
+    ${qs}
+    <button class="btn wide" id="gad-submit" onclick="submitCheckin()" disabled style="opacity:.5">Answer all 7 to see your result</button>
+  `;
+}
+function selectGad(qi,val,btn){
+  gadAnswers[qi]=val;
+  btn.parentElement.querySelectorAll('.opt').forEach(b=>b.setAttribute('aria-pressed',b===btn));
+  if(gadAnswers.every(a=>a!==null)){ const s=document.getElementById('gad-submit'); s.disabled=false; s.style.opacity='1'; s.textContent='See my result →'; }
+}
+function submitCheckin(){
+  const score=gadAnswers.reduce((a,b)=>a+b,0);
+  const arr=load('anxietee_checkins'); arr.push({date:new Date().toISOString(),score:score}); save('anxietee_checkins',arr);
+  renderCheckinResult(score);
+}
+function bandFor(s){
+  if(s<=4) return {label:'Minimal anxiety',msg:"You're showing very little anxiety right now. Keep doing what works for you. 💜"};
+  if(s<=9) return {label:'Mild anxiety',msg:'A mild level of anxiety. Coping tools like breathing and reframing can genuinely help here.'};
+  if(s<=14) return {label:'Moderate anxiety',msg:"A moderate level. It may be worth talking with a doctor or therapist about how you've been feeling."};
+  return {label:'Severe anxiety',msg:'A high level of anxiety. Please consider reaching out to a professional — you deserve real support. If you’re in crisis, tap “Get help.”'};
+}
+function buildChart(data){
+  if(!data||data.length<2) return '<p class="hint">Take a few check-ins over time and your trend line will appear here.</p>';
+  const pts=data.slice(-12), w=560,h=150,pad=24,maxS=21;
+  const stepX=(w-pad*2)/(pts.length-1);
+  const X=i=>pad+i*stepX, Y=s=>pad+(h-pad*2)*(1-s/maxS);
+  const path=pts.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.score).toFixed(1)).join(' ');
+  const dots=pts.map((p,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(p.score).toFixed(1)}" r="4" fill="#b026ff"/>`).join('');
+  const thY=Y(10).toFixed(1);
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Your check-in scores over time">
+    <line x1="${pad}" y1="${thY}" x2="${w-pad}" y2="${thY}" stroke="rgba(255,179,92,.45)" stroke-dasharray="4 5"/>
+    <path d="${path}" fill="none" stroke="url(#cg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+    <defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8b5cff"/><stop offset="1" stop-color="#38d6d0"/></linearGradient></defs>
+  </svg>
+  <div class="hint" style="text-align:center;margin-top:2px">Higher = more anxiety · dashed line marks 10 (moderate) · last ${pts.length} check-ins</div>`;
+}
+function renderCheckinResult(score){
+  const b=bandFor(score), hist=load('anxietee_checkins');
+  document.getElementById('checkin-inner').innerHTML=`
+    <button class="back" onclick="openCheckin()" style="margin-bottom:6px">← New check-in</button>
+    <div class="card result-score">
+      <div class="num">${score}<span style="font-size:22px;color:var(--muted)">/21</span></div>
+      <div class="band">${b.label}</div>
+      <p class="sub" style="margin:12px auto 0">${b.msg}</p>
+    </div>
+    <h3 style="margin:22px 0 6px;font-size:16px">Your trend</h3>
+    ${buildChart(hist)}
+    <p class="disclaimer" style="border:none;padding-top:10px">The GAD-7 is a screening tool, not a diagnosis — only a qualified professional can diagnose anxiety. Your scores are saved privately on your device.</p>
+    <div class="btn-row" style="justify-content:flex-start">
+      <button class="btn ghost" onclick="go('home')">Back home</button>
+    </div>
+  `;
+}
+
+/* ---- your data ---- */
+function renderDataSummary(){
+  const c=load('anxietee_checkins').length, t=load('anxietee_thoughts').length;
+  const el=document.getElementById('data-summary'); if(!el) return;
+  el.innerHTML=`<div style="display:flex;gap:30px">
+    <div><div style="font-size:32px;font-weight:800;color:var(--cyan)">${c}</div><div class="hint">check-ins</div></div>
+    <div><div style="font-size:32px;font-weight:800;color:var(--pink)">${t}</div><div class="hint">reframes</div></div>
+  </div>
+  <p class="hint" style="margin-top:14px">Stored only in this browser. Clearing your browser data — or tapping “Clear all” below — erases it for good.</p>`;
+}
+function exportData(){
+  const data={app:'ANXIETEE',exported:new Date().toISOString(),checkins:load('anxietee_checkins'),thoughts:load('anxietee_thoughts')};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='anxietee-data.json'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function clearData(){
+  if(!confirm('Erase all your check-ins and reframes from this device? This cannot be undone.')) return;
+  try{ localStorage.removeItem('anxietee_checkins'); localStorage.removeItem('anxietee_thoughts'); }catch(e){}
+  renderDataSummary();
+  alert('Your data has been cleared from this device.');
+}
+
+/* ================= PHASE 3 · LEARN LIBRARY ================= */
+/* Educational summaries adapted from two cited research projects:
+   "Understanding Anxiety" (conditions) + the anxiety-treatments evidence outline. */
+function chips(items){ return '<div class="stat-chips">'+items.map(i=>'<div class="stat-chip"><div class="n">'+i[0]+'</div><div class="l">'+i[1]+'</div></div>').join('')+'</div>'; }
+
+const LEARN=[
+/* ---------- group: understanding anxiety ---------- */
+{id:'science',g:'about',ic:'🧠',t:'What anxiety actually is',d:'The science — and why it exists at all',
+src:'APA, WHO, NIMH, StatPearls, Cleveland Clinic',
+body:'<p><b>Anxiety is a normal, universal emotion</b> — the mind and body preparing for something that might go wrong. In the right amount it is even useful. It becomes a disorder only when it is out of proportion to the situation, cannot be controlled, and interferes with everyday life.</p>'+
+'<h3>Fear vs. anxiety</h3><p><b>Fear</b> is a present-moment alarm about a clear threat happening right now — the automatic fight-or-flight response. <b>Anxiety</b> is future-focused and longer-lasting, aimed at "what ifs" that may never happen. Fear says <i>there is a bear</i>; anxiety says <i>what if there is a bear</i>.</p>'+
+'<h3>What happens in your body</h3><p>Three systems drive it: the <b>amygdala</b> (the brain’s threat detector), the <b>HPA axis</b> (the stress-hormone loop), and chemical messengers like serotonin. The amygdala flags a threat — real or only perceived — often before your thinking brain has caught up. Adrenaline and cortisol flood in: heart rate rises, senses sharpen, muscles tense. Life-saving in a real emergency; exhausting when the alarm won’t switch off.</p>'+
+'<h3>You are in very large company</h3>'+chips([['359M','people worldwide living with an anxiety disorder (WHO, 2021)'],['31.1%','of U.S. adults experience one at some point in life (NIMH)'],['19.1%','of U.S. adults had one in the past year (NIMH)'],['~1.66×','more common in women than men, globally']])+
+'<p>And the WHO estimates only about <b>1 in 4</b> people who need support for anxiety actually receive any — a big part of why this app exists.</p>'},
+
+{id:'severe',g:'about',ic:'🌡️',t:'“Severe anxiety” — what it means',d:'A level of intensity, not a diagnosis',
+src:'GAD-7 clinical references, NIMH',
+body:'<p>“Severe anxiety” describes <b>how intense and disabling</b> anxiety is — not which condition someone has. Severe, life-limiting anxiety can come from panic disorder, a phobia, social anxiety, PTSD, or GAD. What makes it severe is the degree, not the label.</p>'+
+'<h3>How it’s measured</h3><p>The most widely used yardstick is the <b>GAD-7</b> — the same 7-question check built into this app. Scores fall into bands: <b>0–4</b> minimal · <b>5–9</b> mild · <b>10–14</b> moderate · <b>15–21</b> severe. A score of <b>10 or higher</b> is the standard point where a professional evaluation is worth having. In general, the higher the score, the more it tends to disrupt work, home life, and relationships.</p>'+
+'<h3>What severe anxiety feels like</h3><p>Physically: a racing or pounding heart, shortness of breath, chest tightness, muscle tension, sweating, nausea, trembling, insomnia. Mentally: a sense of impending danger, intrusive thoughts that won’t switch off, trouble concentrating, irritability. At its most acute it can tip into a panic attack.</p>'+
+'<div class="art-cta"><button class="btn" onclick="openCheckin()">Take a private check-in →</button></div>'},
+
+{id:'gad',g:'about',ic:'🌀',t:'Generalized anxiety disorder',d:'Chronic, “free-floating” worry',
+src:'DSM-5-TR summaries, NIMH, Merck Manual, Cleveland Clinic',
+body:'<p>GAD is excessive worry about <b>many different things</b>, more days than not, for at least six months — worry the person finds very hard to control.</p>'+
+'<p>What sets it apart from ordinary worry is that it is chronic and <b>“free-floating”</b>: not attached to one thing, it drifts from finances to health to work to family, rarely settling. Everyday worry eases when the problem passes; GAD worry outlasts and outsizes its triggers.</p>'+
+'<h3>The picture</h3><p>Alongside the worry: restlessness or feeling keyed up, tiring easily, trouble concentrating (mind going blank), irritability, muscle tension, and sleep problems. Adults need at least three of these for a diagnosis; children only one.</p>'+
+chips([['5.7%','of U.S. adults in their lifetime (NIMH)'],['~2×','more common in women than men'],['~30','median age it starts — later than most anxiety disorders'],['~¼','of close relatives of an affected person are also affected']])+
+'<p>Causes blend genetics, brain chemistry (serotonin, noradrenaline, GABA, the stress axis), and life: chronic stress, childhood adversity, financial strain, thin social support, and a naturally worry-prone temperament.</p>'},
+
+{id:'panic-attack',g:'about',ic:'⚡',t:'Panic attacks',d:'The body’s alarm firing without a fire',
+src:'DSM-5-TR summaries, NIMH, Merck Manual, WHO surveys',
+body:'<p>A panic attack is an abrupt surge of intense fear or discomfort that <b>peaks within minutes</b> — the fight-or-flight response going off at full volume with no actual danger present. It is genuinely frightening, but <b>it is not physically dangerous, and it passes.</b></p>'+
+'<h3>What it can include</h3><p>Pounding heart, sweating, trembling, shortness of breath, a choking feeling, chest pain, nausea, dizziness, chills or heat, numbness or tingling — plus a sense of unreality, fear of losing control, or fear of dying. Four or more of these at once counts as a panic attack.</p>'+
+chips([['<10 min','typical time to peak — often much faster'],['5–20 min','usual duration'],['13.2%','of people worldwide have one at some point'],['≥4','symptoms at once = a panic attack']])+
+'<h3>“It felt like a heart attack”</h3><p>That is extremely common — the symptoms overlap closely, and as many as a quarter of ER chest-pain patients turn out to have panic, not heart disease. The chest sensations come from muscle tension and a racing heart, not damage to the heart. (New or unexplained chest pain still deserves medical attention — let a doctor make that call.)</p>'+
+'<p>Panic attacks also are not unique to panic disorder — they can happen in social anxiety, phobias, PTSD, or as a one-off in someone with no disorder at all.</p>'+
+'<div class="art-cta"><button class="btn" onclick="go(\'breathe\')">Slow your body down — Breathe →</button></div>'},
+
+{id:'panic-disorder',g:'about',ic:'🔁',t:'Panic disorder',d:'When the fear of the next attack takes over',
+src:'NIMH, StatPearls, Merck Manual',
+body:'<p>Having a panic attack is <b>not</b> the same as having panic disorder. Isolated attacks are common. Panic disorder is diagnosed when attacks are recurrent and unexpected, and for a month or more afterward the person either worries persistently about the next one or reshapes their behavior to avoid one.</p>'+
+chips([['12.8%','of people who ever have a panic attack go on to develop panic disorder'],['4.7%','of U.S. adults in their lifetime (NIMH)'],['~2×','more common in women than men'],['~32','median age of onset']])+
+'<p>It runs in families (heritability around 30–40%), and centers on an overactive amygdala and hyper-excitable fear circuitry. Stress, adverse childhood experiences, and smoking are known contributors.</p>'+
+'<h3>The agoraphobia connection</h3><p>After attacks, many people start avoiding the places where they happened — which is how agoraphobia often develops. The two frequently travel together, but each can occur alone.</p>'},
+
+{id:'social',g:'about',ic:'👥',t:'Social anxiety disorder',d:'Far more than shyness',
+src:'NIMH, Merck Manual, Social Anxiety Institute',
+body:'<p>Social anxiety disorder is a persistent, powerful fear of situations where you could be <b>watched and judged</b> — driven by fear of being humiliated, embarrassed, or rejected — lasting six months or more.</p>'+
+'<h3>Shyness vs. the disorder</h3><p>Shyness is a normal personality trait: mild, manageable, and it doesn’t derail a life. Social anxiety disorder is different — a disproportionate fear that leads people to avoid social situations entirely or endure them in real distress, impairing work, school, and relationships. Nearly 30% of adults with it experience serious impairment.</p>'+
+'<p>Commonly feared: public speaking, meeting new people, being watched while eating or working. The anxiety shows physically — blushing, sweating, trembling — and the visibility of those symptoms often deepens the fear. A rarer “performance-only” form is limited to things like stage fright.</p>'+
+chips([['12.1%','of U.S. adults in their lifetime (NIMH)'],['7.1%','in the past year'],['early teens','typical age it starts, often after childhood shyness'],['9.1%','of U.S. adolescents affected']])},
+
+{id:'phobias',g:'about',ic:'🕷️',t:'Specific phobias',d:'The most common anxiety disorder of all',
+src:'StatPearls, NIMH, Cleveland Clinic',
+body:'<p>A specific phobia is an intense, out-of-proportion fear of a particular thing or situation — almost always triggered on contact, actively avoided, lasting six months or more. What separates a phobia from an ordinary fear isn’t usually the thing feared, but the consequences: people reshape and restrict their lives to avoid the trigger.</p>'+
+'<h3>The five groups</h3><ul><li><b>Animal</b> — spiders, insects, dogs, snakes</li><li><b>Natural environment</b> — heights, storms, water</li><li><b>Blood-injection-injury</b> — needles, blood, medical procedures</li><li><b>Situational</b> — flying, elevators, enclosed spaces</li><li><b>Other</b> — choking, vomiting, loud sounds, costumed characters</li></ul>'+
+chips([['12.5%','of U.S. adults in their lifetime (NIMH)'],['age 8','median onset — one of the earliest of any anxiety disorder'],['~2:1','female-to-male ratio'],['43%','approximate heritability (twin studies)']])+
+'<p><b>One odd exception:</b> blood-injection-injury phobia is the only phobia that reliably makes people faint — a brief spike in heart rate followed by a sharp drop. Every other phobia produces the usual sustained surge of arousal.</p>'},
+
+{id:'agoraphobia',g:'about',ic:'🚪',t:'Agoraphobia',d:'Fear of being trapped without escape',
+src:'StatPearls, NIMH, NHS',
+body:'<p>A common misconception is that agoraphobia means “fear of leaving the house” or of open spaces. In reality it is fear of situations where <b>escape might be hard, or help unavailable</b>, if panic-like or embarrassing symptoms strike — the dread is of what might happen to you there, not of the place itself.</p>'+
+'<p>It involves at least two of five situation types: public transport, open spaces, enclosed spaces, lines and crowds, or being outside the home alone — with avoidance, needing a companion, or enduring in intense distress.</p>'+
+chips([['1.3%','of U.S. adults in their lifetime (NIMH)'],['age 20','median onset'],['40.6%','of past-year cases have serious impairment'],['~⅓','of people with agoraphobia also have panic disorder']])+
+'<p>It often grows out of panic disorder — avoiding the places attacks happened — but more than half of cases occur with no panic history at all. At its most severe it can leave a person housebound; it is also among the most heritable of the phobias.</p>'},
+
+{id:'separation',g:'about',ic:'🫂',t:'Separation anxiety disorder',d:'Not just a childhood phase',
+src:'StatPearls, Cleveland Clinic, Merck Manual, NCS-R',
+body:'<p>Separation anxiety disorder is excessive, developmentally inappropriate fear about being apart from home or from the people you’re attached to — in <b>children or adults</b>.</p>'+
+'<h3>Normal phase vs. disorder</h3><p>Some separation anxiety is a universal stage of development — it appears around 6–12 months as babies learn that people still exist when out of sight, peaks around 10–18 months, and fades by age 2–3. It becomes a disorder when it is too intense, arrives at the wrong age, or persists long past when it should have resolved: extreme distress at separation, persistent worry about harm coming to loved ones, refusal to go out or sleep alone, nightmares, physical complaints.</p>'+
+chips([['~4%','of children — the most common anxiety disorder under age 12'],['6.6%','estimated lifetime prevalence of the adult form'],['77.5%','of affected adults first developed it in adulthood'],['~36%','of untreated childhood cases persist into adulthood']])+
+'<p>In adults the anxiety usually centers on a partner or one’s own children, with excessive checking-in and worry about loss. It was only formally recognized in adults in 2013.</p>'},
+
+{id:'mutism',g:'about',ic:'🤐',t:'Selective mutism',d:'Anxiety-driven silence — not defiance',
+src:'NHS, Cleveland Clinic, Selective Mutism Association',
+body:'<p>Selective mutism is when a child (usually) talks freely at home but <b>consistently cannot speak</b> in certain social settings — like school — for a month or more, in a way that interferes with life.</p>'+
+'<p>The most important thing to understand: <b>this is not willful refusal or stubbornness.</b> The child is not choosing silence — they are caught in an anxiety-driven freeze response, more “autopilot” than decision. It was reclassified as an anxiety disorder precisely because the overwhelming majority of affected children are anxious.</p>'+
+chips([['~1 in 140','school-aged children affected — a rare condition'],['age 2–5','typical onset, often only noticed when school starts'],['75–100%','of people with selective mutism also have social anxiety'],['78%','show moderate-to-full improvement at long-term follow-up']])+
+'<p>Its roots combine temperament (constitutional shyness), a strong family predisposition to anxiety, and environment. The deep overlap with social anxiety has researchers questioning whether they are truly separate conditions.</p>'},
+
+{id:'ocd',g:'about',ic:'♻️',t:'Obsessive-compulsive disorder',d:'The anxiety-driven loop',
+src:'NIMH, International OCD Foundation, Cleveland Clinic',
+body:'<p>OCD is a self-reinforcing cycle: an unwanted, intrusive thought or urge (an <b>obsession</b>) sparks intense anxiety → a repetitive behavior or mental ritual (a <b>compulsion</b>) is performed to neutralize it → relief comes, but only briefly, and the loop restarts. To count as a disorder the cycle must eat more than an hour a day or cause major distress.</p>'+
+'<p>Common obsessions: contamination, symmetry and “just-right” feelings, taboo thoughts, fears of harming someone. Common compulsions: washing, checking, arranging, counting, repeating phrases.</p>'+
+'<h3>The tidiness myth</h3><p>Being neat or organized “is not OCD.” People with OCD take <b>no pleasure</b> in their rituals — they perform them because not doing so brings overwhelming anxiety, and the intrusive thoughts feel alien and disturbing precisely because they clash with the person’s own values.</p>'+
+chips([['2.3%','of U.S. adults in their lifetime (NIMH)'],['~40%','heritability (twin studies)'],['>1 hr/day','of obsessions/compulsions is the diagnostic threshold'],['50.6%','of past-year cases have serious impairment']])+
+'<p>OCD technically sits in its own diagnostic chapter now (alongside hoarding and body dysmorphia), but anxiety still powers the machine: obsessions provoke it, compulsions exist to discharge it.</p>'},
+
+{id:'ptsd',g:'about',ic:'🛡️',t:'Post-traumatic stress disorder',d:'When the alarm won’t stand down after trauma',
+src:'NIMH, VA National Center for PTSD, Cleveland Clinic',
+body:'<p>PTSD can develop after directly experiencing, witnessing, or learning about actual or threatened death, serious injury, or sexual violence. Symptoms fall in four clusters:</p>'+
+'<ul><li><b>Intrusion</b> — unwanted memories, nightmares, flashbacks where the trauma feels like it’s happening again</li><li><b>Avoidance</b> — steering clear of reminders, people, places</li><li><b>Negative shifts in thinking and mood</b> — persistent fear, guilt, shame, detachment</li><li><b>Arousal changes</b> — hypervigilance, exaggerated startle, feeling constantly “on edge”</li></ul>'+
+chips([['~90%','of people experience a trauma in life — most never develop PTSD'],['6.8%','of U.S. adults develop PTSD in their lifetime'],['18–36%','of the trauma-exposed develop PTSD (estimates vary)'],['1 month','symptoms lasting under a month are “acute stress disorder,” not PTSD']])+
+'<p>That first number matters: trauma is far more common than PTSD. Genetics account for only about 5–20% of risk — prior trauma load and early-life adversity matter enormously. In the brain: a hyperactive amygdala, a smaller hippocampus, and reduced prefrontal control over the fear response.</p>'},
+
+{id:'illness',g:'about',ic:'🩺',t:'Illness anxiety disorder',d:'Formerly “hypochondria”',
+src:'Merck Manual, Mayo Clinic, StatPearls, ADAA',
+body:'<p>Illness anxiety disorder is a preoccupation with having or acquiring a serious illness — persisting six months or more — where physical symptoms are absent or only mild. The distress is driven by the <b>fear of illness itself</b>: normal body sensations (a muscle twitch, ordinary fatigue) get read as evidence of a grave disease.</p>'+
+'<p>It comes in two forms: a <b>care-seeking</b> type (frequent doctor visits, repeated tests, changing physicians) and a <b>care-avoidant</b> type (avoiding medical care out of fear that testing will confirm the worst).</p>'+
+'<h3>Worry vs. the disorder</h3><p>Occasional health worry is normal. IAD worry is ongoing, distressing, disruptive — and it survives even a thorough, reassuring medical work-up. The internet has amplified it through “cyberchondria”: compulsive symptom-googling that heightens rather than relieves the anxiety, hitting hardest in people already high in health anxiety.</p>'+
+'<p>Risk factors include serious childhood illness, a family focus on health, pre-existing anxiety, and major stress. It affects men and women about equally. And the suffering is real even when the feared disease is not — research finds genuinely worse health outcomes in people who live with this level of health fear.</p>'},
+
+/* ---------- group: what can help ---------- */
+{id:'therapy',g:'help',ic:'🗣️',t:'Talk therapies',d:'The best-researched route through anxiety',
+src:'APA, NICE/NHS, published meta-analyses',
+body:'<p>Talk therapy — delivered by a trained professional — is the most-researched route through anxiety. A quick, honest map of the field:</p>'+
+'<ul>'+
+'<li><b>Cognitive behavioral therapy (CBT)</b><span class="ev first">First-line</span> — the gold standard. Works on the distorted thoughts and avoidance that keep anxiety alive; typically around 12–15 sessions.</li>'+
+'<li><b>Exposure therapy</b><span class="ev first">First-line</span> — gradual, planned facing of feared things with a therapist. The strongest single evidence for phobias, panic, and social anxiety. Distressing short-term, by design.</li>'+
+'<li><b>ERP (exposure &amp; response prevention)</b><span class="ev first">Gold standard for OCD</span> — face triggers while resisting compulsions; most people who complete it improve.</li>'+
+'<li><b>ACT</b><span class="ev strong">Strong</span> — accept anxious feelings, act on your values; comparable to CBT in trials.</li>'+
+'<li><b>Metacognitive therapy</b><span class="ev strong">Strong for GAD</span> — targets beliefs about worry itself; rivals CBT in some trials.</li>'+
+'<li><b>EMDR</b><span class="ev first">First-line for PTSD</span> — bilateral stimulation while recalling distress.</li>'+
+'<li><b>Group CBT</b><span class="ev strong">Effective</span> — ideal for social anxiety (the group is built-in exposure).</li>'+
+'<li><b>Online guided CBT (iCBT)</b><span class="ev strong">Strong</span> — therapist-guided online CBT performs about as well as face-to-face. Unguided versions see high dropout.</li>'+
+'<li><b>Guided self-help</b><span class="ev mod">First step</span> — CBT workbooks with brief practitioner support; a good first step for mild-to-moderate anxiety, not enough for severe.</li>'+
+'</ul>'+
+'<div class="art-note">💭 The <b>Reframe</b> tool in this app is built on the core CBT move — catching a distorted thought and finding a fairer one. It’s a taste of the method, not a course of therapy.</div>'+
+'<div class="art-cta"><button class="btn" onclick="openReframe()">Try a reframe →</button></div>'},
+
+{id:'meds',g:'help',ic:'💊',t:'Medication — the lay of the land',d:'So the names make sense at the doctor’s office',
+src:'NIMH, NHS, Cleveland Clinic, APA pharmacotherapy reviews',
+body:'<p>Anxiety medication is <b>prescribed and monitored by a doctor</b> — nothing here is a recommendation. But walking into an appointment is easier when the names already make sense:</p>'+
+'<ul>'+
+'<li><b>SSRIs</b> (sertraline, escitalopram…)<span class="ev first">First-line</span> — boost serotonin. Take 2–6 weeks to work and can briefly <i>raise</i> anxiety at the start — that’s expected, not failure. Stopped by tapering, with the doctor.</li>'+
+'<li><b>SNRIs</b> (venlafaxine, duloxetine)<span class="ev first">First-line</span> — serotonin + norepinephrine; sit alongside SSRIs.</li>'+
+'<li><b>Benzodiazepines</b> (alprazolam, lorazepam…)<span class="ev lim">Short-term only</span> — fast-acting sedatives. ⚠️ Tolerance, dependence, and serious withdrawal make them a short-term bridge, not a first-line plan — and they’re risky mixed with alcohol.</li>'+
+'<li><b>Buspirone</b><span class="ev mod">Second-line for GAD</span> — non-addictive, slow onset.</li>'+
+'<li><b>Beta-blockers</b> (propranolol)<span class="ev lim">Situational</span> — blunt the racing heart and tremor of performance moments (a speech, an audition); no benefit for the disorders themselves.</li>'+
+'<li><b>Hydroxyzine</b><span class="ev mod">Supported for GAD</span> — a sedating antihistamine; fast and non-addictive, mainly causes drowsiness.</li>'+
+'<li><b>Pregabalin</b><span class="ev mod">Licensed for GAD in UK/EU</span> — ⚠️ a controlled drug with misuse potential; tapered to stop.</li>'+
+'<li><b>Older antidepressants</b> (tricyclics, MAOIs)<span class="ev lim">Effective but rarely used</span> — real drawbacks pushed them behind the newer options.</li>'+
+'</ul>'+
+'<div class="art-note">The one rule that matters: <b>never start, stop, or change a dose on your own.</b> Several of these need careful tapers, and your prescriber needs to know about every supplement you take, too.</div>'},
+
+{id:'mindbody',g:'help',ic:'🧘',t:'Mind-body practices',d:'Breathing, mindfulness, and honest evidence',
+src:'NCCIH (NIH), published trials',
+body:'<p>These are the practices you can start today. The evidence, honestly graded:</p>'+
+'<ul>'+
+'<li><b>Mindfulness meditation</b><span class="ev strong">Moderate–strong</span> — non-judgmental present-moment awareness; reliable short-term anxiety reduction.</li>'+
+'<li><b>MBSR</b> (8-week mindfulness program)<span class="ev strong">Strong</span> — a 2023 trial found it worked as well as a leading SSRI for anxiety disorders.</li>'+
+'<li><b>Paced breathing</b> (~6 breaths/min)<span class="ev mod">Moderate</span> — raises calming parasympathetic activity and lowers stress markers. This is exactly what the Breathe orb paces you through.</li>'+
+'<li><b>Belly (diaphragmatic) breathing</b><span class="ev mod">Moderate</span> — works best guided, in sessions of 5+ minutes.</li>'+
+'<li><b>Progressive muscle relaxation</b><span class="ev mod">Moderate</span> — tense-and-release, muscle group by muscle group.</li>'+
+'<li><b>Yoga</b><span class="ev lim">Mixed</span> — helps elevated everyday anxiety; less clear for diagnosed disorders.</li>'+
+'<li><b>Biofeedback</b><span class="ev mod">Moderate</span> — learning to steer body signals like heart-rate variability.</li>'+
+'<li><b>Guided imagery, tai chi, massage, aromatherapy (lavender)</b><span class="ev lim">Limited–moderate</span> — low-risk, gentler evidence.</li>'+
+'<li><b>Acupuncture, EFT “tapping,” neurofeedback</b><span class="ev lim">Limited</span> — the studies so far are weak or mixed; going in with open eyes is fair.</li>'+
+'</ul>'+
+'<div class="art-cta"><button class="btn" onclick="go(\'breathe\')">Open the Breathe orb →</button></div>'},
+
+{id:'lifestyle',g:'help',ic:'🌿',t:'Lifestyle & supplements',d:'Daily habits — and the safety flags that matter',
+src:'NCCIH, NIH Office of Dietary Supplements, LiverTox, NHS',
+body:'<h3>Daily habits with real evidence</h3><ul>'+
+'<li><b>Aerobic exercise</b><span class="ev strong">Consistent evidence</span> — one of the most reliable anxiety-lowerers there is. (Heads-up: intense bursts can mimic panic arousal if you’re panic-prone — build up gently.)</li>'+
+'<li><b>Strength training</b><span class="ev strong">Supported</span> — reduces anxiety symptoms and anxiety sensitivity.</li>'+
+'<li><b>Sleep</b> — a regular schedule and wind-down routine is a standard first step; stubborn insomnia deserves its own help (CBT-I).</li>'+
+'<li><b>Less caffeine</b><span class="ev first">First-line self-help</span> — caffeine feeds jitteriness and poor sleep. Taper rather than quit cold.</li>'+
+'<li><b>Less alcohol</b> — improves sleep and next-day anxiety. (Heavy daily drinkers should get medical help to stop safely.)</li>'+
+'<li><b>Quitting nicotine</b> — lowers anxiety by around six months out. ⚠️ It usually <i>spikes</i> in the first days-to-weeks of withdrawal — that’s temporary; ride it out.</li>'+
+'<li><b>Time in nature, social connection, journaling, gratitude</b><span class="ev mod">Modest</span> — small effects, essentially no downside.</li>'+
+'</ul>'+
+'<h3>Supplements — with the flags shown</h3><p>Supplements aren’t regulated like medicines, and “natural” is not the same as safe. Tell your doctor about anything you take.</p><ul>'+
+'<li><b>Lavender oil capsules (Silexan)</b><span class="ev strong">Strongest herbal evidence</span> — has rivaled prescription options for GAD in trials.</li>'+
+'<li><b>Chamomile</b><span class="ev mod">Supported</span> — reduces GAD symptoms; skip it if you’re allergic to ragweed.</li>'+
+'<li><b>Magnesium</b><span class="ev mod">Moderate</span> — for mild anxiety, especially if your intake is low.</li>'+
+'<li><b>Ashwagandha</b><span class="ev mod">Supported</span> — ⚠️ but reports of liver injury exist; avoid with liver disease.</li>'+
+'<li><b>L-theanine, omega-3, saffron, lemon balm</b><span class="ev lim">Mixed–modest</span>.</li>'+
+'<li><b>Kava</b> — ⚠️ <b>skip this one:</b> linked to severe liver injury; the FDA warns against it, and the latest trial found it no better than placebo anyway.</li>'+
+'<li><b>CBD</b><span class="ev exp">Preliminary</span> — ⚠️ unregulated products, liver-enzyme effects, and many drug interactions.</li>'+
+'</ul>'},
+
+{id:'emerging',g:'help',ic:'🔬',t:'New & emerging options',d:'What’s promising vs. what’s proven',
+src:'FDA releases, Cleveland Clinic Journal of Medicine, published meta-analyses',
+body:'<p>Headlines love this category, so here’s the sober version. <b>“Experimental” means still in trials — promising is not the same as standard care.</b></p>'+
+'<ul>'+
+'<li><b>TMS</b> (magnetic pulses to the prefrontal cortex)<span class="ev mod">FDA-cleared for depression &amp; OCD</span> — used off-label for anxiety; non-invasive, done awake in a clinic.</li>'+
+'<li><b>Virtual-reality exposure therapy</b><span class="ev strong">Evidence-supported</span> — immersive graded exposure performs about as well as in-person exposure for phobias and social anxiety.</li>'+
+'<li><b>Ketamine / esketamine</b><span class="ev exp">Off-label for anxiety</span> — rapid-acting, supervised in certified clinics; real risks (dissociation, misuse) mean monitoring matters.</li>'+
+'<li><b>Psilocybin- and MDMA-assisted therapy</b><span class="ev exp">Experimental</span> — active research, strongest so far for end-of-life anxiety (psilocybin) and PTSD (MDMA); neither is approved care.</li>'+
+'<li><b>LSD-derived MM120</b><span class="ev exp">Experimental</span> — earned FDA “breakthrough” status for GAD in 2024; trials ongoing.</li>'+
+'<li><b>CES devices</b> (ear-clip microcurrent)<span class="ev mod">Cleared, debated</span> — FDA-cleared for decades; a 2023 meta-analysis found benefit, though the mechanism is still argued.</li>'+
+'<li><b>Floatation tanks</b><span class="ev exp">Experimental</span> — large short-term drops in state anxiety; durability unknown.</li>'+
+'</ul>'+
+'<div class="art-note">If something on this list interests you, the move is the same as ever: bring it to a clinician who knows your history — not a clinic’s marketing page.</div>'},
+];
+
+function openLearn(){ go('learn'); renderLearn(); }
+function renderLearn(){
+  const wrap=document.getElementById('learn-groups');
+  const groups=[['about','Understanding anxiety'],['help','What can help']];
+  wrap.innerHTML=groups.map(([g,label])=>
+    '<div class="learn-group">'+label+'</div><div class="learn-list">'+
+    LEARN.filter(a=>a.g===g).map(a=>'<button class="learn-item" onclick="openArticle(\''+a.id+'\')"><span class="ic">'+a.ic+'</span><span><span class="t">'+a.t+'</span><span class="d">'+a.d+'</span></span></button>').join('')+
+    '</div>').join('');
+}
+function openArticle(id){
+  const a=LEARN.find(x=>x.id===id); if(!a) return;
+  go('article');
+  document.getElementById('article-inner').innerHTML=
+    '<p class="eyebrow">'+(a.g==='about'?'Understanding anxiety':'What can help')+'</p>'+
+    '<h2 style="margin-bottom:14px">'+a.ic+' '+a.t+'</h2>'+
+    '<div class="legal">'+a.body+
+    '<p class="disclaimer">Education only — not medical advice, a diagnosis, or a treatment plan. Sources: '+a.src+'. If anxiety is weighing on your life, a clinician can help you figure out what fits <i>you</i>.</p></div>';
+}
+
+/* ---------------- offline / PWA ---------------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+}
+</script>
+</body>
+</html>
